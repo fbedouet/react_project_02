@@ -1,16 +1,28 @@
-import { normalizedData } from "./utils/normalizeData";
-
+import { useEffect, useState } from "react";
+import { getUserData } from "./utils/getUserData";
 
 function App() {
-  try {
-    console.log(normalizedData(true));
-  }catch(e){
-    console.log('erreur');
+  const [data, setData] = useState(null)
+  let name=""
+
+  useEffect( ()=> {
+
+    async function fetchData() {
+      const result = await getUserData(12)
+      setData(result)
+    }
+
+    fetchData()
+    
+  },[] )
+
+  if(data){
+    name=data.userInfos.firstName;
   }
   return (
     <>
     <div className="flex items-center justify-center h-screen bg-blue-500">
-      <h1 className="text-white text-4xl">Bienvenue dans mon app React avec Tailwind CSS!</h1>
+      <h1 className="text-white text-4xl">Bienvenue {name} dans mon app React avec Tailwind CSS!</h1>
     </div>
     </>
   )

@@ -1,31 +1,25 @@
 import { useEffect, useState } from "react";
 import { getUserData } from "./utils/getUserData";
+import { ActivityGph } from "./components/features/ActivityGph";
+import { ScoreGph } from "./components/features/ScoreGph";
 
 function App() {
-  const [data, setData] = useState(null)
-  let name=""
+  const [data, setData] = useState({score:0})
 
   useEffect( ()=> {
 
     async function fetchData() {
       const result = await getUserData(12)
-      setData(result)
+      setData({...result})
     }
 
     fetchData()
     
   },[] )
-
-  if(data){
-    name=data.userInfos.firstName;
-  }
-  return (
-    <>
-    <div className="flex items-center justify-center h-screen bg-blue-500">
-      <h1 className="text-white text-4xl">Bienvenue {name} dans mon app React avec Tailwind CSS!</h1>
-    </div>
-    </>
-  )
+  return <div className="flex justify-center mt-10">
+  <ActivityGph/>
+  <ScoreGph score={0.12}/>
+  </div>
 }
 
 export default App

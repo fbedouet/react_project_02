@@ -1,29 +1,11 @@
 import { useEffect, useRef } from "react"
 import { select, selectAll } from "d3"
 
-export function ActivityGph(){
-
+export function ActivityGph({data}){
     const svgRef = useRef(null)
-
     useEffect( ()=> {
-        const data = [
-            {dayData: 1, weightData: 69.7, caloriesData: 240},
-            {dayData: 2, weightData: 70, caloriesData: 220},
-            {dayData: 3, weightData: 69.8, caloriesData: 280},
-            {dayData: 4, weightData: 69.9, caloriesData: 300},
-            {dayData: 5, weightData: 69.9, caloriesData: 160},
-            {dayData: 6, weightData: 69.5, caloriesData: 162},
-            {dayData: 7, weightData: 70.3, caloriesData: 390},
-            {dayData: 8, weightData: 70.3, caloriesData: 390},
-            {dayData: 9, weightData: 70.3, caloriesData: 390},
-            {dayData: 10, weightData: 70.3, caloriesData: 390},
-            {dayData: 11, weightData: 70.3, caloriesData: 390},
-            {dayData: 12, weightData: 70.3, caloriesData: 390},
-            {dayData: 13, weightData: 70.3, caloriesData: 390},
-        ]
-
-        const weightData = data.map((index)=>index.weightData)
-        const caloriesData = data.map((index)=>index.caloriesData)
+        const kilogram = data.map((index)=>index.kilogram)
+        const calories = data.map((index)=>index.calories)
         const width = 600
         const height = 320
         const graphHeight = 145
@@ -32,29 +14,35 @@ export function ActivityGph(){
         const xAxisLabelPadding = 15
         const valueLineStrokeWidth = 7
         const yAxisLabelPadding = 50
+
+        const lowWeightValue = Number.isInteger(Math.min(...kilogram)) 
+        ? Math.min(...kilogram)-1
+        : Math.floor(Math.min(...kilogram))
         
-        const lowWeightValue = Number.isInteger(Math.min(...weightData)) 
-        ? Math.min(...weightData)-1
-        : Math.floor(Math.min(...weightData))
-        
-        const gapHighLow = Math.ceil(Math.max(...weightData))-lowWeightValue+1
+        const gapHighLow = Math.ceil(Math.max(...kilogram))-lowWeightValue+1
         
         const weightScale = graphHeight / gapHighLow
         
-        const yPos = weightData.map( data=> {
-            const result = (data - lowWeightValue) * weightScale
-            return Math.round( result )
+        const yPos = kilogram.map( data=> {
+            if(lowWeightValue>-1){
+                const result = (data - lowWeightValue) * weightScale
+                return Math.round( result )
+            }else{
+                return 7
+            }
         } )
+
         
         const yText =[]
         for (let index = 0; index < gapHighLow+1; index++) {
             yText[index]={label:index+lowWeightValue, position: Math.round(index*weightScale)}
         }
+       
         const yAxisFontSize = yText.length>5 ? 10 : 14
         const xAxisFontSize = 16
         const gapValues = (width-2*marginLeft-3*valueLineStrokeWidth-yAxisLabelPadding-yAxisFontSize-2)/(data.length-1)
         
-        const echelle2 = (graphHeight / Math.max(...caloriesData)*0.7)
+        const echelle2 = (graphHeight / Math.max(...calories)*0.7)
 
         const svg = select(svgRef.current)
             .append("svg")
@@ -70,7 +58,7 @@ export function ActivityGph(){
             .attr("transform", `translate(${-gapValues+marginLeft+valueLineStrokeWidth},${-marginBottom + xAxisLabelPadding})`)
             .attr("x", (d, i) => (i + 1) * gapValues) // Position x
             .attr("y", height) // Position y
-            .text(d=> `${d.dayData}`)
+            .text(d=> `${d.day}`)
             .attr("fill", "#9B9EAC")
             .attr("font-size",`${xAxisFontSize}px`)
             
@@ -95,7 +83,7 @@ export function ActivityGph(){
                 .attr("x",data.length*gapValues+(5+7/2)+yAxisLabelPadding)
                 .attr("y",d=> height-d.position)
                 .text(d=>d.label)
-                .attr("fill","#9B9EAC")
+                .attr("fill",lowWeightValue<0?"none":"#9B9EAC")
                 .attr("font-size",yText.length>5 ? `${yAxisFontSize}px` : `${yAxisFontSize}px`)
 
                 
@@ -135,13 +123,12 @@ export function ActivityGph(){
                         .attr("fill", "red")
 
                     svg.append("text")
-                        //.attr("x", (d.index+1) * gapValues - valueLineStrokeWidth * 2)
                         .attr("y", posY+rectHeight/2-interline/2+7/2)
                         .attr("fill", "white")
                         .style("font-size", "7px")
                         .attr("text-anchor", "middle")
                         .selectAll("tspan")
-                            .data([`${d.caloriesData}Kcal`, `${d.weightData}Kg`])
+                            .data([`${d.calories}Kcal`, `${d.kilogram}Kg`])
                             .join("tspan")
                             .attr("x", posX + rectWidth/2)
                             .attr("dy", (d, i) => i * interline)
@@ -159,7 +146,7 @@ export function ActivityGph(){
             .attr("y1", (d) => height) // Position y de départ
             .attr("x2", (d, i) => (i + 1) * gapValues + valueLineStrokeWidth/2) // Position x d'arrivée
             .attr("y2", (d, i) => height - d + valueLineStrokeWidth/2) // Position y d'arrivée
-            .attr("stroke", "black")
+            .attr("stroke", lowWeightValue<0?"none":"black")
             .attr("stroke-width", valueLineStrokeWidth)
             
             svg
@@ -170,30 +157,30 @@ export function ActivityGph(){
             .attr("cx",(d, i) => (i + 1) * gapValues +valueLineStrokeWidth/2)
             .attr("cy", (d, i) => height - d +valueLineStrokeWidth/2)
             .attr("r", valueLineStrokeWidth/2)
-            .attr("fill","black")
+            .attr("fill",lowWeightValue<0?"none":"black")
         }
         
         {   svg     // Calories data
             .selectAll(".calories-line")
-            .data(caloriesData)
+            .data(calories)
             .join("line")
             .attr("transform", `translate(${-gapValues+marginLeft+valueLineStrokeWidth*2},${-marginBottom - xAxisFontSize})`)
             .attr("x1", (d, i) => (i + 1) * gapValues+valueLineStrokeWidth/2) // Position x de départ
             .attr("y1", (d) => height) // Position y de départ
             .attr("x2", (d, i) => (i + 1) * gapValues+valueLineStrokeWidth/2) // Position x d'arrivée
             .attr("y2", (d, i) => height - d * echelle2 +valueLineStrokeWidth/2) // Position y d'arrivée
-            .attr("stroke", "red")
+            .attr("stroke", lowWeightValue<0?"none":"red")
             .attr("stroke-width", valueLineStrokeWidth)
             
             svg
             .selectAll("weight-round")
-            .data(caloriesData)
+            .data(calories)
             .join("circle")
             .attr("transform", `translate(${-gapValues+marginLeft+valueLineStrokeWidth*2},${-marginBottom - xAxisFontSize})`)
             .attr("cx",(d, i) => (i + 1) * gapValues + valueLineStrokeWidth/2)
             .attr("cy", (d, i) => height - d * echelle2 + valueLineStrokeWidth/2)
             .attr("r", valueLineStrokeWidth/2)
-            .attr("fill","red")
+            .attr("fill",lowWeightValue<0?"none":"red")
         }
 
         { svg.append("text")
@@ -238,7 +225,7 @@ export function ActivityGph(){
             select(svgRef.current).selectAll("*").remove()
         }
     
-    },[])
+    },[data])
 
 
     return <div className="rounded-lg " ref={svgRef}></div>

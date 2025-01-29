@@ -48,7 +48,7 @@ export function getMockUserData(idUser, dataType, shouldReject=false) {
 
                     }
                 }
-            },2000
+            },1000
         )
     })    
 }

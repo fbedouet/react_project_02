@@ -19,7 +19,3 @@ export async function getUserData(id) {
     }
 
 }
-
-export async function getActivityData(id) {
-    
-}

@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
 import { getUserData } from "./utils/getUserData";
-import { ActivityGph } from "./components/features/ActivityGph";
-import { ScoreGph } from "./components/features/ScoreGph";
 import { getActivityData } from "./utils/getActivityData";
 import { getPerfData } from "./utils/getPerfData";
-import { TestResizeObs } from "./components/features/TestResizeObs";
 import { PerformanceGph } from "./components/features/common/PerformanceGph";
+import { ScoreGph } from "./components/features/common/ScoreGph";
 
 function App() {
   const datas = [
@@ -16,9 +14,17 @@ function App() {
     {day: 5, kilogram: 0, calories: 0},
     {day: 6, kilogram: 0, calories: 0},
     {day: 7, kilogram: 0, calories: 0},
-]
-const userId = 12
+  ]
+  const frenchTranslate = {
+    cardio:"Cardio",
+    energy: "Energie", 
+    endurance: "Endurance", 
+    strength: "Force", 
+    intensity: "Intensité",
+    speed: "Vitesse"
+  }
 
+  const userId = 18
   const [userData, setUserData] = useState({score:0})
   const [activityData, setActivityData] = useState(datas)
   const [perfData, setPerfData]= useState(null)
@@ -37,12 +43,10 @@ const userId = 12
     fetchData()
     
   },[] )
+
   return <div className="flex justify-center m-10">
-  {/* <ActivityGph data={activityData}/>
-  <ScoreGph score={userData.score}/> */}
-  {/* <PerformanceGphResp data={perfData} /> */}
-  <PerformanceGph data={perfData}/>
-  {/* <TestResizeObs/> */}
+    <PerformanceGph data={perfData} order={[5,4,3,2,1,6]} language={frenchTranslate}/>
+    <ScoreGph score={userData.score} />
   </div>
 }
 

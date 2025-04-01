@@ -2,17 +2,18 @@ import { useEffect, useRef, useState } from "react";
 import { scaleLinear, select, easeCubicInOut } from "d3"
 
 export function PerformanceGph({data, language, order=[1, 2, 3, 4, 5, 6]}){
+
     // Functions
     const getCoordinates =(radius, currentAxis)=> {
         const angle = 2*Math.PI / 6
-        const cx = widthDimension/2
-        const cy = widthDimension/2
+        const cx = widthHeightSize/2
+        const cy = widthHeightSize/2
         const endX = cx - radius * Math.cos(angle*currentAxis+Math.PI/2)
         const endY = cy - radius * Math.sin(angle*currentAxis+Math.PI/2)
         return`${endX},${endY}`
     }
 
-    const displayPerfUser =(svg,data, scale)=> {
+    const displayPerfUser =(currentSvg, data, scale)=> {
         
         const polygonCoordinates =(data, scale)=> {
             const coordinates = []
@@ -28,28 +29,33 @@ export function PerformanceGph({data, language, order=[1, 2, 3, 4, 5, 6]}){
             return coordinates.join(",")
         }
 
-        svg.selectAll(".perfUser").raise()
-        .data([ polygonCoordinates(data, scale) ])
-        .join("polygon")
-        .attr("class", "perfUser")
-        .transition().duration(250).ease(easeCubicInOut)
-        .attr("points", d => d)
-        .attr("fill", "rgba(255, 0, 0, 0.7)") //"rgba(255, 0, 0, 0.7)"
+        currentSvg.selectAll(".perfUser").raise()
+            .data([ polygonCoordinates(data, scale) ])
+            .join("polygon")
+            .attr("class", "perfUser")
+            .transition().duration(250).ease(easeCubicInOut)
+            .attr("points", d => d)
+            .attr("fill", "rgba(255, 0, 0, 0.7)")
     }
 
-    const displayAxesLabel =(svg, data, radius, spacing, fontSize)=> {
+    const displayAxesLabel =(currentSvg, data, radius, labelChartSpacingInPourcent, fontSizeInPourcent)=> {
         const axesLabel = Array.from({length:data.length}, (_,index)=> {
             return data[index].perfType
         })
+
+        const spacing = labelChartSpacingInPourcent / 100 * widthHeightSize
+
         const anchor = [
             {label:axesLabel[0] ,type:"start", spacingX:spacing, spacingY:0},
             {label:axesLabel[1] ,type:"start", spacingX:spacing, spacingY:0},
-            {label:axesLabel[2] ,type:"middle", spacingX:0, spacingY:spacing*5},
+            {label:axesLabel[2] ,type:"middle", spacingX:0, spacingY:spacing*3},
             {label:axesLabel[3] ,type:"end", spacingX:-spacing, spacingY:0},
             {label:axesLabel[4] ,type:"end", spacingX:-spacing, spacingY:0},
-            {label:axesLabel[5] ,type:"middle", spacingX:0, spacingY:-spacing*4}
+            {label:axesLabel[5] ,type:"middle", spacingX:0, spacingY:-spacing*3}
         ]
+
         const coordinates = []
+        const fontSizeInPixel = fontSizeInPourcent / 100 * widthHeightSize
 
         for (let currentAxis=1 ; currentAxis<axesLabel.length+1; currentAxis++){
             coordinates.push( getCoordinates( radius, currentAxis ))
@@ -59,24 +65,25 @@ export function PerformanceGph({data, language, order=[1, 2, 3, 4, 5, 6]}){
             const [x,y]= coordinates[index].split(",")
             const {label, type, spacingX, spacingY} = anchor[index]
 
-            svg
-            .append("text")
-            .attr("x", Number(x) + spacingX)
-            .attr("y", Number(y) + 3 + spacingY)
-            .text(label)
-            .style("font-size", `${fontSize}px`)
-            .style("font-weight", 700)
-            .attr("fill", "#FFFFFF")
-            .attr("text-anchor", type)
+            currentSvg
+                .append("text")
+                .attr("x", Number(x) + spacingX)
+                .attr("y", Number(y) + 3 + spacingY)
+                .text(label)
+                .style("font-size", `${fontSizeInPixel}px`)
+                .style("font-weight", 700)
+                .attr("fill", "#FFFFFF")
+                .attr("text-anchor", type)
         }
     }
 
-    const displayIndexedMarker =(svg, scale, valuesOfGraduation)=> {
+    const displayIndexedMarker =(currentSvg, scale, valuesOfGraduation)=> {
         
-        const drawPolygon =(svg,
-            perfValues, scale,
+        const drawPolygon =(
+            currentSvg, perfValues, scale,
             strokeWidth, strokeColor="black", fillColor="none")=> {
-                const numberOfAxis = 6
+            
+            const numberOfAxis = 6
     
             const coordinates = Array.from({length:numberOfAxis+1}, (_,currentAxis)=> {
                 if(!currentAxis) return
@@ -86,7 +93,7 @@ export function PerformanceGph({data, language, order=[1, 2, 3, 4, 5, 6]}){
                 )
             }).join(" ")
             
-            return svg
+            return currentSvg
                 .selectAll("indexedMarker")
                 .data([null])
                 .join("polygon")
@@ -98,10 +105,11 @@ export function PerformanceGph({data, language, order=[1, 2, 3, 4, 5, 6]}){
         }
 
         const numberOfAxis = 6
+
         for (let value of valuesOfGraduation){
             const valuesAxis = Array(numberOfAxis).fill(value)
             const strokeWidth = value % 100 ? 0.2 : 1
-            drawPolygon (svg, valuesAxis, scale,strokeWidth,"#FFFFFF")
+            drawPolygon (currentSvg, valuesAxis, scale, strokeWidth, "#FFFFFF")
         }
 
     }
@@ -119,7 +127,7 @@ export function PerformanceGph({data, language, order=[1, 2, 3, 4, 5, 6]}){
 
     // Hooks
     const svgRef = useRef(null)
-    const [widthDimension, setWidthDimension] = useState(0)
+    const [widthHeightSize, setWidthHeightSize] = useState(0)
 
     // Constantes values
     const valuesOfGraduation = [50,100,150,200,250]
@@ -128,7 +136,7 @@ export function PerformanceGph({data, language, order=[1, 2, 3, 4, 5, 6]}){
     // Size observer
     useEffect(()=>{
         const observer = new ResizeObserver( entries=> {
-            setWidthDimension(entries[0].contentRect.width)
+            setWidthHeightSize(entries[0].contentRect.width)
         })
         observer.observe(svgRef.current)
 
@@ -137,7 +145,8 @@ export function PerformanceGph({data, language, order=[1, 2, 3, 4, 5, 6]}){
 
     // Render
     useEffect(()=>{
-        if (!widthDimension) return
+        if (!widthHeightSize) return
+
         if (!data) {data = {
             1: {perfType: "cardio",value: 0 },
             2: {perfType: "energy",value: 0},
@@ -146,8 +155,10 @@ export function PerformanceGph({data, language, order=[1, 2, 3, 4, 5, 6]}){
             5: {perfType: "speed",value: 0},
             6: {perfType: "intensity",value:0 },
         }}
+
         const normalizedData = normalizeData(data, order, language)
-        const radiusOfPerfChart = widthDimension/2*0.7
+        const radiusOfPerfChart = widthHeightSize/2*0.7
+
         const scale = scaleLinear()
             .domain([0,maxValueOfGraduation])
             .range([0,radiusOfPerfChart])
@@ -156,22 +167,23 @@ export function PerformanceGph({data, language, order=[1, 2, 3, 4, 5, 6]}){
             .selectAll("svg")
             .data([null])
             .join("svg")
-            .attr("width", widthDimension)
+            .attr("width", widthHeightSize)
             .style("background-color", "#282D30")
-            .classed("rounded-lg aspect-square",true)
+            .classed("rounded-lg aspect-square", true)
 
         displayIndexedMarker (svg, scale, valuesOfGraduation)
+
         displayPerfUser(svg, normalizedData, scale)
 
-        const fontSize = widthDimension / 25
-        const labelWithChartSpacing = widthDimension /100
-        displayAxesLabel(svg, normalizedData, radiusOfPerfChart, labelWithChartSpacing, fontSize)
+        const labelWithChartSpacing = widthHeightSize /100
+
+        displayAxesLabel(svg, normalizedData, radiusOfPerfChart, 2, 4.5)
         
         return () => {
             select(svgRef.current)
                 .selectAll(".indexedMarker, text").remove()
         }
-    },[widthDimension, data])
+    },[widthHeightSize, data])
 
     return <>
         <div ref={svgRef} className="w-full overflow-auto">
